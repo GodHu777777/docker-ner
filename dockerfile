@@ -11,5 +11,6 @@ COPY run.sh /app
 # "--no-cache-dir" can lower storage usage 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN ./run.sh
 
-ENTRYPOINT ["/app/run.sh"]
+RUN python pred.py
