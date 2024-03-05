@@ -3,3 +3,7 @@ This is a NLP-NER docker based on [huggingface-transformers]( https://github.com
 # ver Mar 4:
 
 It can be trained by conll2003 and do prediction locally. I am not sure if it is stable in docker container.
+
+# ver Mar 5:
+
+Added simple Flask to present NER result through webpage.
