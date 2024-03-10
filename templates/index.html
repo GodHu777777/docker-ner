@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>方框输入字符串</title>
+  </head>
+  <body>
+    <h1>输入字符串：</h1>
+    <form method="POST" action="/">
+      <input type="text" name="input_str">
+      <input type="submit" value="提交">
+    </form>
+    {% if result %}
+    <h2>函数返回结果：</h2>
+    <div>{{ result }}</div>
+    {% endif %}
+  </body>
+</html>
