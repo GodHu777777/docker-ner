@@ -1,9 +1,15 @@
 from flask import Flask, render_template, request
 from transformers import BertForTokenClassification, BertTokenizer
 import torch 
-
+import os
 
 app = Flask(__name__)
+
+@app.route('/train', methods=['GET'])
+def train():
+    os.system("bash run.sh")
+    return 'Hello World'
+    
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
