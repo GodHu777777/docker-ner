@@ -4,6 +4,16 @@ This is a NLP-NER docker based on [huggingface-transformers]( https://github.com
 | :----------: | :---: | :--------: | :------: |
 |      ❌       |   ✔️   |     ✔️      |    ❌     |
 
+# docker usage
+
+```bash
+$ docker build -t docker-ner .
+```
+
+```bash
+$ docker run -it --rm -p 80:80 docker-ner /bin/bash
+```
+
 # How to use?
 
 ## Step 1: clone this repository 
