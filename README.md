@@ -6,13 +6,7 @@ This is a NLP-NER docker based on [huggingface-transformers]( https://github.com
 
 # docker usage
 
-```bash
-$ docker build -t docker-ner .
-```
-
-```bash
-$ docker run -it --rm -p 80:80 docker-ner /bin/bash
-```
+see https://hub.docker.com/r/genghonghu/docker-ner for more information.
 
 # How to use?
 
@@ -60,3 +54,7 @@ Added simple Flask to present NER result through webpage.
 # ver Mar 10:
 
 Added usage document.
+
+TODO: hyper parameters list
+
+`config` file  
