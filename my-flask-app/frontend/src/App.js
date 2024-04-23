@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import LinearProgress from '@mui/material/LinearProgress';
 import Button from '@mui/material/Button';
+import './App.css'
 
 const Train = () =>{
   //抓数据
@@ -51,7 +52,7 @@ const Train = () =>{
 
 
   return(
-    <div>
+    <div className='div1'>
     <h3>Model Training</h3>
     <form method='POST'  onSubmit={handleSubmit}>
       <label>model:</label>
@@ -103,7 +104,7 @@ const Predict = () =>{
   };
 
   return(
-    <div>
+    <div className='div2'>
       <h3>Model Predict</h3>
         <form method="POST" onSubmit={handleSubmit}>
           <label>String:</label>
@@ -140,7 +141,7 @@ const Evaluation = ()=>{
       });
   }
   return(
-    <div>
+    <div className='div3'>
       <h3>Model Evaluation</h3>
       <Button size="small" variant="contained" onClick={handleClick}>Predict</Button>
       {error && <div>Error: {error}</div>}
@@ -164,7 +165,10 @@ const Evaluation = ()=>{
 
 const App = () => {
   return (
-    <> 
+    <>
+    <div className='title'>
+
+    </div>
     <Train />
     <Predict/>
     <Evaluation/>
