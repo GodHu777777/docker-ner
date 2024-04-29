@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 import time
-
+from flask import request
+import json
 app = Flask(__name__)
 
 
@@ -9,7 +10,7 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/selection', methods=['GET'])
+@app.route('/selection', methods=['POST'])
 def selection():
     return {
         'Task': 'selection',
@@ -18,7 +19,20 @@ def selection():
     }
 
 
-@app.route('/predict', methods=['GET'])
+@app.route('/training', methods=['POST'])
+def training():
+    model = request.form.get('model')
+    dataset = request.form.get('dataset')
+    print(model)
+    print(dataset)
+    return {
+        'Task': 'training',
+        'Frontend': 'React',
+        'Backend': 'Flask'
+    }
+
+
+@app.route('/predict', methods=['POST'])
 def predict():
 
     return {
@@ -37,14 +51,6 @@ def evaluation():
         'Backend': 'Flask'
     }
 
-
-@app.route('/training', methods=['GET'])
-def training():
-    return {
-        'Task': 'training',
-        'Frontend': 'React',
-        'Backend': 'Flask'
-    }
 
 
 if __name__ == '__main__':
