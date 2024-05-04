@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import LinearProgress from '@mui/material/LinearProgress';
 import Button from '@mui/material/Button';
+import './App.css'
 
 const Train = () =>{
   //抓数据
@@ -16,13 +17,16 @@ const Train = () =>{
 
   //发数据
   const [selectedOption, setSelectedOption] = useState('');
+  
   const handleChange = (event) => {
     setSelectedOption(event.target.value);
   };
   const handleSubmit = (event) => {
     event.preventDefault();
+    const formData = new FormData(event.target);  
+    formData.append('selectedOption', selectedOption);
     // 在这里使用 Axios 发送 POST 请求
-    axios.post('/training', { selectedOption })
+    axios.post('/training', formData)
       .then(response => {
         alert('Training');
       })
@@ -51,15 +55,15 @@ const Train = () =>{
 
 
   return(
-    <div>
+    <div className='div1'>
     <h3>Model Training</h3>
     <form method='POST'  onSubmit={handleSubmit}>
       <label>model:</label>
-      <select value={selectedOption} onChange={handleChange}> 
+      <select value={selectedOption} onChange={handleChange} name='model'> 
         {selectList.map(item=><option id={item.id}>{item.name}</option>)}
       </select>
       <label>dataset:</label>
-      <select>
+      <select value={selectedOption} onChange={handleChange} name='dataset'>
         {selectList.map(item=><option id={item.id}>{item.dataset}</option>)}
       </select>
       <Button size="small" variant="contained"  type='submit'>Train</Button>
@@ -88,7 +92,7 @@ const Predict = () =>{
   const handleSubmit = (event) => {
     event.preventDefault();
     // 在这里使用 Axios 发送 POST 请求，将输入框中的值发送到后端
-    axios.post('/predict', { inputValue })
+    axios.post('http://127.0.0.1:5000/predict', { inputValue })
       .then(response => {
         console.log('Data sent successfully!');
         // 在这里处理成功的响应并设置状态
@@ -103,7 +107,7 @@ const Predict = () =>{
   };
 
   return(
-    <div>
+    <div className='div2'>
       <h3>Model Predict</h3>
         <form method="POST" onSubmit={handleSubmit}>
           <label>String:</label>
@@ -127,7 +131,7 @@ const Evaluation = ()=>{
   const [error, setError] = useState(null);
 
   const handleClick = () =>{
-    axios.get('/evalution')
+    axios.get('http://127.0.0.1:5000/evaluation')
       .then(response => {
         console.log('Data fetched successfully:', response.data);
         setData(response.data); // 设置数据状态
@@ -140,7 +144,7 @@ const Evaluation = ()=>{
       });
   }
   return(
-    <div>
+    <div className='div3'>
       <h3>Model Evaluation</h3>
       <Button size="small" variant="contained" onClick={handleClick}>Predict</Button>
       {error && <div>Error: {error}</div>}
@@ -164,11 +168,13 @@ const Evaluation = ()=>{
 
 const App = () => {
   return (
-    <> 
-    <Train />
-    <Predict/>
-    <Evaluation/>
-    </>
+    <div className= 'body'>
+      <div className='title'>
+      </div>
+      <Train />
+      <Predict/>
+      <Evaluation/>
+    </div>
   );
 };
 
