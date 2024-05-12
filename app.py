@@ -1,7 +1,23 @@
+# server's app.py
+# here server port is 5000
+
 from flask import Flask, render_template, request
 from transformers import BertForTokenClassification, BertTokenizer
 import torch 
 import os
+import requests
+
+# 定义目标 IP 的地址和端口
+# ghHu: 这里是server to pod的POST请求 所以以下的信息是**pod**的ip和port
+target_ip = '127.0.0.1'
+target_port = 3111  # 假设接收端使用 Flask 应用，默认端口为 5000
+
+# 构造 POST 请求的 URL
+url = f'http://{target_ip}:{target_port}/server2pod'  # 请替换成你要访问的端点地址
+
+# 要发送的文本内容
+message = 'HELLO WORLD from server: I am from China.'
+
 
 app = Flask(__name__)
 
@@ -9,11 +25,24 @@ app = Flask(__name__)
 def train():
     os.system("bash run.sh")
     return 'Hello World'
-    
 
+# 点按钮
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
+
+        # -----------------给pod发信息(POST 请求）-----------------
+        # 发送 POST 请求，直接将 message 作为请求的内容
+        response = requests.post(url, data=message)
+
+        # 检查响应状态码
+        if response.status_code == 200:
+            print("POST 请求成功！")
+            print("响应内容：", response.text)
+        else:
+            print("POST 请求失败，状态码：", response.status_code)
+        # -----------------给pod发信息(POST 请求）-----------------
+           
         input_str = request.form['input_str']
         result = your_function(input_str)  # 调用你的函数，并传入用户输入的字符串
         return render_template('index.html', result=result)
@@ -22,8 +51,8 @@ def home():
 def your_function(text):
 
     # 加载已保存的模型和tokenizer
-    model = BertForTokenClassification.from_pretrained("/tmp/test-ner")
-    tokenizer = BertTokenizer.from_pretrained("/tmp/test-ner")
+    model = BertForTokenClassification.from_pretrained("/home/ghhu/study/docker/docker-ner/test-ner")
+    tokenizer = BertTokenizer.from_pretrained("/home/ghhu/study/docker/docker-ner/test-ner")
 
     # 输入文本
     # TODO: can combine with frontend(FLASK) to make interactive input
@@ -55,5 +84,18 @@ def your_function(text):
     
     return res
 
+    
+# receive message from pod
+@app.route('/pod2server', methods=['POST'])
+def receiveFromPod():
+    if request.method == 'POST':
+        # 从 POST 请求中获取消息内容
+        message = request.data.decode('utf-8')
+        print(type(message))
+        print("Received message:", message)
+        return "Message received successfully!", 200
+    else:
+        return "Only POST requests are allowed", 405
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", debug = True, port=5000)
