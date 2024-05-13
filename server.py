@@ -1,4 +1,6 @@
-# server's app.py
+# server
+# File: server.py
+
 # here server port is 5000
 
 from flask import Flask, render_template, request
@@ -10,13 +12,13 @@ import requests
 # 定义目标 IP 的地址和端口
 # ghHu: 这里是server to pod的POST请求 所以以下的信息是**pod**的ip和port
 target_ip = '127.0.0.1'
-target_port = 3111  # 假设接收端使用 Flask 应用，默认端口为 5000
+target_port = 3111  # pod的flask我用的3111端口
 
 # 构造 POST 请求的 URL
-url = f'http://{target_ip}:{target_port}/server2pod'  # 请替换成你要访问的端点地址
+url_POST = f'http://{target_ip}:{target_port}/server2pod'
 
-# 要发送的文本内容
-message = 'HELLO WORLD from server: I am from China.'
+# 构造 GET 请求的 URL
+url_GET = f'http://{target_ip}:{target_port}/pod2server'
 
 
 app = Flask(__name__)
@@ -26,14 +28,21 @@ def train():
     os.system("bash run.sh")
     return 'Hello World'
 
+message = "Hello from server"
+
 # 点按钮
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
+        
+        # TODO:
+        # hgh: 
+        # to dlc: 这里的input_str就是要predict的那个句子，你把你的react放进来
+        input_str = request.form['input_str']
 
         # -----------------给pod发信息(POST 请求）-----------------
         # 发送 POST 请求，直接将 message 作为请求的内容
-        response = requests.post(url, data=message)
+        response = requests.post(url_POST, data=input_str)
 
         # 检查响应状态码
         if response.status_code == 200:
@@ -42,8 +51,16 @@ def home():
         else:
             print("POST 请求失败，状态码：", response.status_code)
         # -----------------给pod发信息(POST 请求）-----------------
-           
-        input_str = request.form['input_str']
+
+        # -----------------从pod抓信息(GET 请求）-----------------
+        response = requests.get(url_GET)
+        if response.status_code == 200:
+            print("pod返回的数据:", response.text)  # 接收返回的字符串数据
+        else:
+            print('请求失败，状态码:', response.status_code)
+        # -----------------从pod抓信息(GET 请求）-----------------
+        
+        
         result = your_function(input_str)  # 调用你的函数，并传入用户输入的字符串
         return render_template('index.html', result=result)
     return render_template('index.html')

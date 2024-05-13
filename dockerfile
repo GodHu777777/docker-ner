@@ -1,21 +1,15 @@
 # choose light python 
-FROM python:3.8-slim
+FROM genghonghu/python:v0.1
 WORKDIR /app
+
+RUN mkdir -p /tmp/test-ner
 
 # COPY from ... to ... 
 COPY requirements.txt /app
-COPY run_ner.py /app
-COPY run.sh /app
-COPY app.py /app
-COPY templates /app
 
-# install relative libraries 
-# "--no-cache-dir" can lower storage usage 
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
-
-
-RUN ./run.sh
+# COPY model 
+COPY /test-ner/* /tmp/test-ner
 
 # RUN python pred.py
 
-# RUN flask --app app run
+CMD python3 app.py
