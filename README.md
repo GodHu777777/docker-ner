@@ -4,6 +4,10 @@ This is a NLP-NER docker based on [huggingface-transformers]( https://github.com
 | :----------: | :---: | :--------: | :------: |
 |      ❌       |   ✔️   |     ✔️      |    ❌     |
 
+# Architecture
+
+![](https://s2.loli.net/2024/05/13/2LcRIxyK1dpgvQY.jpg)
+
 # docker usage
 
 see https://hub.docker.com/r/genghonghu/docker-ner for more information.
@@ -17,31 +21,23 @@ $ git clone https://github.com/GodHu777777/docker-ner.git
 $ cd docker-ner
 ``````
 
-## Step 2: run the commands of ```run.sh```
+## Step 2: run NLP-NER image
 
 ``````bash
-$ bash run.sh
+$ docker pull genghonghu/docker-ner:v0.3
+$ docker run -it --rm -p 3111:3111 genghonghu/docker-ner:v0.3 # 3111 since flask's port in pod is set to 3111
 ``````
 
-## Step 3: wait for training
-
-It may take several minutes or even more than one hour.
-
-## Step 4: start the project
+## Step 4: start the server and get using it
 
 ``````bash
-$ flask --app app run
+$ python3 server.py
 ``````
 
 After running this command above, there will shows several information about working status, and you can access the given link(default is http://127.0.0.1:5000).
 
-![working status](https://s2.loli.net/2024/03/10/KmrwRaqoQ6e74P8.png)
+![image.png](https://s2.loli.net/2024/05/13/bKGsm2zqgi9JpWS.png)
 
-## Step 5: get using it 
-
-Open a browser and type the link, you can now use it to do any NER task on you own!
-
-![webpage appearance](https://s2.loli.net/2024/03/10/3aiHnKtzZhEGbTS.png)
 
 # ver Mar 4:
 
@@ -58,3 +54,7 @@ Added usage document.
 TODO: hyper parameters list
 
 `config` file  
+
+# ver Mar 13:
+
+All model(LLM) thing has been transferred into docker container, ` server.py` only do message-transferring work and training(TODO).
