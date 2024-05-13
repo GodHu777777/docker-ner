@@ -65,18 +65,5 @@ def home():
         return render_template('index.html', result=response.text)
     return render_template('index.html')
 
-    
-# receive message from pod
-@app.route('/pod2server', methods=['POST'])
-def receiveFromPod():
-    if request.method == 'POST':
-        # 从 POST 请求中获取消息内容
-        message = request.data.decode('utf-8')
-        print(type(message))
-        print("Received message:", message)
-        return "Message received successfully!", 200
-    else:
-        return "Only POST requests are allowed", 405
-
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug = True, port=5000)
