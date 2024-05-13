@@ -1,5 +1,5 @@
 # choose light python 
-FROM genghonghu/python:v0.1
+FROM genghonghu/python-nlp:v1.0
 WORKDIR /app
 
 RUN mkdir -p /tmp/test-ner
