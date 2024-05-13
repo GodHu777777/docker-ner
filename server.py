@@ -11,6 +11,7 @@ import requests
 
 # 定义目标 IP 的地址和端口
 # ghHu: 这里是server to pod的POST请求 所以以下的信息是**pod**的ip和port
+# to zsp: 这里改成你的minikube那些ip,port等等 
 target_ip = '127.0.0.1'
 target_port = 3111  # pod的flask我用的3111端口
 
