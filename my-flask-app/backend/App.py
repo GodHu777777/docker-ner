@@ -3,6 +3,8 @@
 
 from flask import Flask, render_template
 from flask import request
+from flask import jsonify
+
 import requests
 
 app = Flask(__name__)
@@ -10,7 +12,7 @@ app = Flask(__name__)
 # 定义目标 IP 的地址和端口
 # ghHu: 这里是server to pod的POST请求 所以以下的信息是**pod**的ip和port
 # to zsp: 这里改成你的minikube那些ip,port等等 
-target_ip = '81.70.210.120'
+target_ip = '127.0.0.1'
 target_port = 3111  # pod的flask我用的3111端口
 
 # 构造 POST 请求的 URL
@@ -37,6 +39,7 @@ def selection():
         'Backend': 'Flask'
     }
 
+
 #TODO: 接GET请求 用json返回
 
 # {
@@ -58,15 +61,45 @@ def selection():
 #         }
 #     ]
 # }
+@app.route('/load', methods=['GET'])
+def load():
+    return "FUCK"
 
-@app.route('/training', methods=['POST'])
+@app.route('/training', methods=['GET','POST'])
 def training():
-    print("POST请求已发送")
-    return {
-        'Task': 'training',
-        'Frontend': 'React',
-        'Backend': 'Flask'
-    }
+    
+    if request.method == 'POST':
+        if request.is_json:
+            # 获取请求体中的JSON数据
+            print("JSON, YES!!!")
+            data = request.get_json()
+            # 打印接收到的数据，或在此处处理数据
+            print(data)
+            # 返回响应，表示成功接收数据
+            return jsonify({"message": "Data received successfully"}), 200
+        else:
+            # 返回错误响应，表示请求体不是JSON格式
+            return jsonify({"error": "Invalid content type. JSON expected."}), 400
+    
+    elif request.method == 'GET': #GET request
+        return [
+        {
+            "value": 1,
+            "name":"model1",
+            "dataset":"dataset1"
+        },
+        {
+            "value": 2,
+            "name":"model2",
+            "dataset":"dataset2"
+        },
+        {
+            "value": 3,
+            "name":"model3",
+            "dataset":"dataset3"
+        }
+    ]
+
 
 
 @app.route('/predict', methods=['POST'])
