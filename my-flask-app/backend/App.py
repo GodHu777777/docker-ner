@@ -7,8 +7,10 @@ from flask import jsonify
 
 import json
 import requests
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app) # 允许跨域请求
 
 # 定义目标 IP 的地址和端口
 # ghHu: 这里是server to pod的POST请求 所以以下的信息是**pod**的ip和port
@@ -146,7 +148,7 @@ def evaluation():
     }
 
 
-@app.route('/work', methods=['POST,GET'])
+@app.route('/work', methods=['POST','GET'])
 def work():
     return {
         'Task': 'work',
