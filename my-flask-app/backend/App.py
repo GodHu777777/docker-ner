@@ -5,6 +5,7 @@ from flask import Flask, render_template
 from flask import request
 from flask import jsonify
 
+import json
 import requests
 
 app = Flask(__name__)
@@ -82,7 +83,7 @@ def training():
             return jsonify({"error": "Invalid content type. JSON expected."}), 400
     
     elif request.method == 'GET': #GET request
-        return [
+        data = [
         {
             "value": 1,
             "name":"model1",
@@ -98,7 +99,11 @@ def training():
             "name":"model3",
             "dataset":"dataset3"
         }
-    ]
+        ]
+        json_data = json.dumps(data)
+        print("DEBUG:",json_data)
+        
+        return json_data
 
 
 
