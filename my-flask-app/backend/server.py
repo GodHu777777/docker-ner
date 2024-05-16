@@ -9,6 +9,8 @@ import json
 import requests
 from flask_cors import CORS
 
+import os
+
 app = Flask(__name__)
 CORS(app) # 允许跨域请求
 app.static_folder = 'static'
@@ -69,6 +71,7 @@ def selection():
 # }
 @app.route('/load', methods=['GET'])
 def load():
+    global json_data
     data = [
     {
         "value": 1,
@@ -89,10 +92,21 @@ def training():
     if request.method == 'POST':
         if request.is_json:
             # 获取请求体中的JSON数据
-            print("JSON, YES!!!")
-            data = request.get_json()
+            print("DEBUG: JSON, YES!!!")
+            data_json = request.get_json()
             # 打印接收到的数据，或在此处处理数据
-            print(data)
+            print("DEBUG: training parameter by POST: ",data_json)
+
+            data_dict = data_json
+            data_list = list(data_dict.values())
+            
+            model_name_or_path = data_list[0] 
+            dataset_name = data_list[1]
+            print(type(data_list[0]))
+            print(type(data_list[1]))
+            generate_training_bash_script(model_name_or_path = model_name_or_path, dataset_name = dataset_name)
+
+            print("DEBUG: convert to list: ", data_list)
             # 返回响应，表示成功接收数据
             return jsonify({"message": "Data received successfully"}), 200
         else:
@@ -100,11 +114,11 @@ def training():
             return jsonify({"error": "Invalid content type. JSON expected."}), 400
     
     elif request.method == 'GET': #GET request
-        data = [
+        training_data = [
         {
             "value": 1,
-            "name":"model1",
-            "dataset":"dataset1"
+            "name":"modellll1",
+            "dataset":"dat"
         },
         {
             "value": 2,
@@ -117,17 +131,17 @@ def training():
             "dataset":"dataset3"
         }
         ]
-        json_data = json.dumps(data)
-        print("DEBUG:",json_data)
+        json_training_data = json.dumps(training_data)
+        print("DEBUG: json_training_data: ",json_training_data)
         
-        return json_data
+        return json_training_data
 
 
 
 @app.route('/predict', methods=['POST'])
 def predict():
     input_str = request.json.get('str')
-    print("DEBUG:",input_str)
+    print("DEBUG: sentence by POST",input_str)
     print("DEBUG:type",type(input_str))
 
 
@@ -150,17 +164,14 @@ def predict():
     else:
         print('请求失败，状态码:', response.status_code)
     # -----------------从pod抓信息(GET 请求）-----------------
-          
+
+    print("DEBUG: \'/predict\' return value type: ",type(response.text))  
     return response.text
 
 
 @app.route('/evaluation', methods=['GET'])
 def evaluation():
-    return {
-        'Task': 'evaluation',
-        'Frontend': 'React',
-        'Backend': 'Flask'
-    }
+    return json_data
 
 
 @app.route('/work', methods=['POST','GET'])
@@ -170,6 +181,35 @@ def work():
         'Frontend': 'React',
         'Backend': 'Flask'
     }
+
+def generate_training_bash_script(**kwargs):
+    model_name_or_path = kwargs.get('model_name_or_path', '')
+    dataset_name = kwargs.get('dataset_name', '')
+    output_dir = kwargs.get('output_dir', '')
+    do_train = kwargs.get('do_train', False)
+    do_eval = kwargs.get('do_eval', False)
+
+    # 生成文件名
+    file_name = f"{model_name_or_path}_{dataset_name}_script.sh"
+    print("DEBUG file_name: ", file_name)
+    with open(file_name, 'w') as f:
+        f.write("#!/bin/bash\n")
+        f.write("python3 run_ner.py \\\n")
+        if model_name_or_path:
+            f.write(f"  --model_name_or_path {model_name_or_path} \\\n")
+        if dataset_name:
+            f.write(f"  --dataset_name {dataset_name} \\\n")
+        if output_dir:
+            f.write(f"  --output_dir {output_dir} \\\n")
+        if do_train:
+            f.write("  --do_train \\\n")
+        if do_eval:
+            f.write("  --do_eval \\\n")
+    
+    # 运行脚本
+    print("Start training...")
+    print("DEBUG1 file_name: ", file_name)
+    os.system(f"bash {file_name}")
 
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0',port=80)
