@@ -11,6 +11,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app) # 允许跨域请求
+app.static_folder = 'static'
 
 # 定义目标 IP 的地址和端口
 # ghHu: 这里是server to pod的POST请求 所以以下的信息是**pod**的ip和port
@@ -23,6 +24,8 @@ url_POST = f'http://{target_ip}:{target_port}/server2pod'
 
 # 构造 GET 请求的 URL
 url_GET = f'http://{target_ip}:{target_port}/pod2server'
+
+
 
 
 @app.route('/')
@@ -66,7 +69,19 @@ def selection():
 # }
 @app.route('/load', methods=['GET'])
 def load():
-    return "FUCK"
+    data = [
+    {
+        "value": 1,
+        "name":"model1"
+    },
+    {
+        "value": 2,
+        "name":"model2"
+    }
+    ]
+    json_data = json.dumps(data)
+    print("THIS IS LOAD!!!!")
+    return json_data
 
 @app.route('/training', methods=['GET','POST'])
 def training():
