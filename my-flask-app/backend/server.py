@@ -169,9 +169,18 @@ def predict():
     return response.text
 
 
-@app.route('/evaluation', methods=['GET'])
+@app.route('/evaluation', methods=['POST','GET'])
 def evaluation():
-    return json_data
+    if request.method == 'POST':
+        print("DEBUG: evaluate POST success")
+        data = {
+                'F1': 223,
+                'Accuracy': 124,
+                'Recall': 1234
+        }
+        json_data = json.dumps(data)
+        print("DEBUG: ",json_data)
+        return json_data
 
 
 @app.route('/work', methods=['POST','GET'])
