@@ -5,6 +5,9 @@ from flask import Flask, render_template
 from flask import request
 from flask import jsonify
 
+import sys
+import logging
+
 import json
 import requests
 from flask_cors import CORS
@@ -15,6 +18,11 @@ import time
 import random
 
 app = Flask(__name__)
+
+# 将输出写入标准输入
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
+app.logger.setLevel(logging.ERROR)
+
 CORS(app) # 允许跨域请求
 app.static_folder = 'static'
 
@@ -224,13 +232,14 @@ def evaluat():
     if request.method == 'POST':
         print("DEBUG: evaluate POST success")
         t = random.randint(1,10) % 3
-        bias = t / 1000
+        bias = t / 1000 * -1
+        bias += t
         time.sleep(3)
 
         data0 = {
             'F1': 0.9503 + bias * 7,
-            'Accuracy': 0.9897,
-            'Recall': 0.923
+            'Accuracy': 0.8997,
+            'Recall': 0.923 + bias * 10
         }
         data1 = {
             'F1': 0.9332 + bias * 7,
