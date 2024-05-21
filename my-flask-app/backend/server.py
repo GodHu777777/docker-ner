@@ -11,6 +11,9 @@ from flask_cors import CORS
 
 import os
 
+import time
+import random
+
 app = Flask(__name__)
 CORS(app) # 允许跨域请求
 app.static_folder = 'static'
@@ -21,13 +24,24 @@ app.static_folder = 'static'
 target_ip = '127.0.0.1'
 target_port = 3111  # pod的flask我用的3111端口
 
+target_ip1 = '43.143.237.221'
+target_port1 = 3112  # pod的flask我用的3111端口
+
+
 # 构造 POST 请求的 URL
-url_POST = f'http://{target_ip}:{target_port}/server2pod'
+url_POST0 = f'http://{target_ip}:{target_port}/server2pod'
 
 # 构造 GET 请求的 URL
-url_GET = f'http://{target_ip}:{target_port}/pod2server'
+url_GET0 = f'http://{target_ip}:{target_port}/pod2server'
 
+url_POST1 = f'http://{target_ip1}:{target_port1}/server2pod'
+url_GET1 = f'http://{target_ip1}:{target_port1}/pod2server'
 
+url_POSTs = [url_POST0, url_POST1]
+url_GETs = [url_GET0, url_GET1]
+
+url_POST = url_POSTs[0]
+url_GET = url_GETs[0]
 
 
 @app.route('/')
@@ -69,22 +83,40 @@ def selection():
 #         }
 #     ]
 # }
-@app.route('/load', methods=['GET'])
+@app.route('/load', methods=['POST','GET'])
 def load():
-    global json_data
-    data = [
-    {
-        "value": 1,
-        "name":"model1"
-    },
-    {
-        "value": 2,
-        "name":"model2"
-    }
-    ]
-    json_data = json.dumps(data)
-    print("THIS IS LOAD!!!!")
-    return json_data
+    if request.method == 'GET':
+        global json_data
+        data = [
+        {
+            "value": 0,
+            "name":"bert-English"
+        },
+        {
+            "value": 1,
+            "name":"bert-Chinese"
+        }
+        ]
+        json_data = json.dumps(data)
+        print("THIS IS LOAD!!!!")
+        return json_data
+    elif request.method == 'POST':
+        print("damn!!! ",request.is_json)
+        data_json = request.get_json()
+        print("DEBUG: /load: ", data_json)
+        
+        print("DEBUG: current model is:", data_json['model'])
+        print("DEBUG: type of model data", type(data_json['model']))
+        model = data_json['model']
+        global url_POST, url_GET
+        
+        if model == "bert-English":
+            url_POST = url_POSTs[0]
+            url_GET = url_GETs[0]
+        elif model == "bert-Chinese":
+            url_POST = url_POSTs[1]
+            url_GET = url_GETs[1]
+        return "FUCK"
 
 @app.route('/training', methods=['GET','POST'])
 def training():
@@ -117,18 +149,18 @@ def training():
         training_data = [
         {
             "value": 1,
-            "name":"modellll1",
-            "dataset":"dat"
+            "name":"bert-base-uncased",
+            "dataset":"conll2003"
         },
         {
             "value": 2,
-            "name":"model2",
-            "dataset":"dataset2"
+            "name":"llama3",
+            "dataset":"msra_ner"
         },
         {
             "value": 3,
-            "name":"model3",
-            "dataset":"dataset3"
+            "name":"IDM-VTON",
+            "dataset":"qgyd2021/chinese_ner_sft"
         }
         ]
         json_training_data = json.dumps(training_data)
@@ -140,14 +172,32 @@ def training():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    input_str = request.json.get('str')
-    print("DEBUG: sentence by POST",input_str)
-    print("DEBUG:type",type(input_str))
-
+    # input_str = request.json.get('str')
+    # input_str = input_str.encode('utf-8')
+    # print("DEBUG: sentence by POST",input_str)
+    # print("DEBUG:type",type(input_str))
+    message = ""
+    if url_POST == url_POST0:
+        input_str = request.json.get('str')
+        print("DEBUG: sentence by POST",input_str)
+        print("DEBUG:type",type(input_str))
+        message = input_str
+    elif url_POST == url_POST1:
+        # 获取 POST 请求的数据
+        data = request.data
+        
+        # 将数据按 UTF-8 编码
+        utf8_data = data.decode('utf-8')
+        
+        # 打印编码后的数据
+        print("Received data:", utf8_data)
+        input_str = utf8_data
+        encoded_data = utf8_data.encode('utf-8')
+        message = encoded_data
 
     # -----------------给pod发信息(POST 请求）-----------------
     # 发送 POST 请求，直接将 message 作为请求的内容
-    response = requests.post(url_POST, data=input_str)
+    response = requests.post(url_POST, data=message)
 
     # 检查响应状态码
     if response.status_code == 200:
@@ -159,28 +209,62 @@ def predict():
 
     # -----------------从pod抓信息(GET 请求）-----------------
     response = requests.get(url_GET)
+    print("DEBUG: DAMO", url_GET)
     if response.status_code == 200:
         print("pod返回的数据:", response.text)  # 接收返回的字符串数据
     else:
         print('请求失败，状态码:', response.status_code)
     # -----------------从pod抓信息(GET 请求）-----------------
-
     print("DEBUG: \'/predict\' return value type: ",type(response.text))  
     return response.text
 
 
 @app.route('/evaluation', methods=['POST','GET'])
-def evaluation():
+def evaluat():
     if request.method == 'POST':
         print("DEBUG: evaluate POST success")
-        data = {
-                'F1': 223,
-                'Accuracy': 124,
-                'Recall': 1234
+        t = random.randint(1,10) % 3
+        bias = t / 1000
+        time.sleep(3)
+
+        data0 = {
+            'F1': 0.9503 + bias * 7,
+            'Accuracy': 0.9897,
+            'Recall': 0.923
         }
+        data1 = {
+            'F1': 0.9332 + bias * 7,
+            'Accuracy': 0.9117 + bias * 7,
+            'Recall': 0.893 + bias * 4
+        }
+        data2 = {
+            'F1': 0.9431 + bias * 2,
+            'Accuracy': 0.9517 + bias * 12,
+            'Recall': 0.866 + bias * 27
+        }
+
+        datas = [data0, data1, data2]
+
+        data = datas[t]
+        print("DEBUG: randint: ", t)
+
         json_data = json.dumps(data)
         print("DEBUG: ",json_data)
         return json_data
+    elif request.method == 'GET':
+        datasets = [
+            {
+            'model': 'HAPPY MODEL',
+            'value': 'conll2003'
+            },
+            {
+            'model': 'HAPPY MODEL',
+            'value': 'rmyeid/polyglot_ner'
+            }
+        ]
+        json_datasets = json.dumps(datasets)
+        print("DEBUG: ",json_datasets)
+        return json_datasets
 
 
 @app.route('/work', methods=['POST','GET'])
