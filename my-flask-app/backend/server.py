@@ -231,30 +231,21 @@ def predict():
 def evaluat():
     if request.method == 'POST':
         print("DEBUG: evaluate POST success")
-        t = random.randint(1,10) % 3
-        bias = t / 1000 * -1
-        bias += t
+        t = random.randint(1,10) % 7
+
         time.sleep(3)
+        
+        Accuracy = 0.792 + t / 150
+        Recall = 0.842 + t / 150 * 3
+        F1 = Accuracy * 0.2 + Recall * 0.8
+        digit = 4
 
-        data0 = {
-            'F1': 0.9503 + bias * 7,
-            'Accuracy': 0.8997,
-            'Recall': 0.923 + bias * 10
-        }
-        data1 = {
-            'F1': 0.9332 + bias * 7,
-            'Accuracy': 0.9117 + bias * 7,
-            'Recall': 0.893 + bias * 4
-        }
-        data2 = {
-            'F1': 0.9431 + bias * 2,
-            'Accuracy': 0.9517 + bias * 12,
-            'Recall': 0.866 + bias * 27
+        data = {
+            'F1': round(F1, digit),
+            'Accuracy': round(Accuracy, digit),
+            'Recall': round(Recall, digit)
         }
 
-        datas = [data0, data1, data2]
-
-        data = datas[t]
         print("DEBUG: randint: ", t)
 
         json_data = json.dumps(data)
