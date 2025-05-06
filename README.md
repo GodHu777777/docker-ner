@@ -1,60 +1,40 @@
-This is a NLP-NER docker based on [huggingface-transformers]( https://github.com/huggingface/transformers) and [Flask](https://flask.palletsprojects.com/en/3.0.x/).
+# 1ms-helper
 
-| Load Dataset | Train | Prediction | Evaluate |
-| :----------: | :---: | :--------: | :------: |
-|      ❌       |   ✔️   |     ✔️      |    ❌     |
+1ms-helper is a terminal-based application built with Go and the `tview` library. It provides a menu-driven interface for managing services and viewing logs.
 
-# Architecture
+## Features
 
-![](https://s2.loli.net/2024/05/13/2LcRIxyK1dpgvQY.jpg)
+- **Service Management**: Start and manage services.
+- **Log Viewer**: View real-time logs.
 
-# docker usage
+## Requirements
 
-see https://hub.docker.com/r/genghonghu/docker-ner for more information.
+- [颜色组件库：github.com/gookit/color](github.com/gookit/color)
+- [控制台库：github.com/spf13/cobra](github.com/spf13/cobra)
 
-# How to use?
+## Installation
 
-## Step 1: clone this repository 
+1. Clone the repository:
+    ```sh
+    git clone https://cnb.cool/mliev/1ms.run/1ms-helper.git
+    ```
+2. Navigate to the project directory:
+    ```sh
+    cd 1ms-helper
+    ```
+3. Install dependencies:
+    ```sh
+    go mod tidy
+    ```
 
-``````bash
-$ git clone https://github.com/GodHu777777/docker-ner.git
-$ cd docker-ner
-``````
+## Usage
 
-## Step 2: run NLP-NER image
+Run the application:
+```sh
+go run main.go
+```
 
-``````bash
-$ docker pull genghonghu/docker-ner:v0.3
-$ docker run -it --rm -p 3111:3111 genghonghu/docker-ner:v0.3 # 3111 since flask's port in pod is set to 3111
-``````
-
-## Step 4: start the server and get using it
-
-``````bash
-$ python3 server.py
-``````
-
-After running this command above, there will shows several information about working status, and you can access the given link(default is http://127.0.0.1:5000).
-
-![image.png](https://s2.loli.net/2024/05/13/bKGsm2zqgi9JpWS.png)
-
-
-# ver Mar 4:
-
-It can be trained by conll2003 and do prediction locally. I am not sure if it is stable in docker container.
-
-# ver Mar 5:
-
-Added simple Flask to present NER result through webpage.
-
-# ver Mar 10:
-
-Added usage document.
-
-TODO: hyper parameters list
-
-`config` file  
-
-# ver Mar 13:
-
-All model(LLM) thing has been transferred into docker container, ` server.py` only do message-transferring work and training(TODO).
+## 打包 提示:删除上次打包的dist目录
+```shell
+goreleaser release --snapshot --clean
+```
