@@ -1,40 +1,55 @@
-# 1ms-helper
+![](![image.png](https://s2.loli.net/2025/05/23/uXZTRo49HeP6vUw.png))
 
-1ms-helper is a terminal-based application built with Go and the `tview` library. It provides a menu-driven interface for managing services and viewing logs.
+You can reach our project freely through this link [https://docker.ghhu.xin](https://docker.ghhu.xin)
 
-## Features
+This is a NLP-NER docker based on [huggingface-transformers]( https://github.com/huggingface/transformers) and [Flask](https://flask.palletsprojects.com/en/3.0.x/).
+| Load Dataset | Train | Prediction | Evaluate |
+| :----------: | :---: | :--------: | :------: |
+|      ✔️       |   ✔️   |     ✔️      |    ✔️     |
+# Architecture
+![](https://s2.loli.net/2024/05/13/2LcRIxyK1dpgvQY.jpg)
+# docker usage
+see https://hub.docker.com/r/genghonghu/docker-ner for more information.
+# How to use?
+## Step 1: clone this repository 
+``````bash
+$ git clone https://github.com/GodHu777777/docker-ner.git
+$ cd docker-ner
+``````
+## Step 2: run NLP-NER image
 
-- **Service Management**: Start and manage services.
-- **Log Viewer**: View real-time logs.
+``````bash
+$ docker pull genghonghu/docker-ner:v0.3
+$ docker run -it --rm -p 3111:3111 genghonghu/docker-ner:v0.3 # 3111 since flask's port in pod is set to 3111
+``````
 
-## Requirements
+## Step 4: start the server and get using it
 
-- [颜色组件库：github.com/gookit/color](github.com/gookit/color)
-- [控制台库：github.com/spf13/cobra](github.com/spf13/cobra)
+``````bash
+$ python3 server.py
+``````
 
-## Installation
+After running this command above, there will shows several information about working status, and you can access the given link(default is http://127.0.0.1:5000).
 
-1. Clone the repository:
-    ```sh
-    git clone https://cnb.cool/mliev/1ms.run/1ms-helper.git
-    ```
-2. Navigate to the project directory:
-    ```sh
-    cd 1ms-helper
-    ```
-3. Install dependencies:
-    ```sh
-    go mod tidy
-    ```
+![image.png](https://s2.loli.net/2024/05/13/bKGsm2zqgi9JpWS.png)
 
-## Usage
 
-Run the application:
-```sh
-go run main.go
-```
+# ver Mar 4:
 
-## 打包 提示:删除上次打包的dist目录
-```shell
-goreleaser release --snapshot --clean
-```
+It can be trained by conll2003 and do prediction locally. I am not sure if it is stable in docker container.
+
+# ver Mar 5:
+
+Added simple Flask to present NER result through webpage.
+
+# ver Mar 10:
+
+Added usage document.
+
+TODO: hyper parameters list
+
+`config` file  
+
+# ver Mar 13:
+
+All model(LLM) thing has been transferred into docker container, ` server.py` only do message-transferring work and training(TODO).

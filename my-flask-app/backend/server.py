@@ -15,9 +15,9 @@ import random
 import subprocess
 from subprocess import PIPE, CalledProcessError
 
-from datetime import datetime
-
-
+from datetime import datetime, timezone
+import docker 
+docker_client =docker.from_env()
 app = Flask(__name__)
 
 # 将输出写入标准输入
@@ -160,97 +160,56 @@ def load():
 
         # 总是返回一个成功的响应，表示模型选择已处理
         return jsonify({"message": f"Model '{model}' selected"}), 200
-
-
-
+#0512-替换原有create
 @app.route('/create', methods=['POST'])
-def train_model():
-    """
-    处理 /train 的 POST 请求。
-    接收 JSON 数据，提取 model 和 dataset 字段，生成训练脚本并执行。
-    返回执行结果或错误信息。
-    """
-    print("Received POST request for /train")
-
-    # 获取 JSON 数据
+def create_container():
+    """最终极简版容器启动接口"""
     try:
+        # 1. 接收并解析请求
         data = request.get_json()
-        if not data:
-            print("Error: No JSON data provided")
-            return jsonify({"error": "No JSON data provided"}), 400
-    except Exception as e:
-        print(f"Error parsing JSON: {e}")
-        return jsonify({"error": "Invalid JSON format", "details": str(e)}), 400
-
-    # 提取 model 和 dataset
-    model = data.get('model')
-    dataset = data.get('dataset')
-
-    if not model or not dataset:
-        print(f"Missing required fields: model={model}, dataset={dataset}")
-        return jsonify({"error": "Missing required fields", "details": "Both 'model' and 'dataset' are required"}), 400
-
-    print(f"Extracted model: {model}, dataset: {dataset}")
-
-    # 生成训练脚本内容
-    script_content = f"""#!/bin/bash
-python3 run_ner.py \\
-  --model_name_or_path {model} \\
-  --dataset_name {dataset} \\
-"""
-    script_path = "/tmp/train_script.sh"
-
-    # 写入脚本文件
-    try:
-        with open(script_path, 'w') as f:
-            f.write(script_content)
-        print(f"Training script generated at {script_path}")
-    except Exception as e:
-        print(f"Error writing script file: {e}")
-        return jsonify({"error": "Failed to generate training script", "details": str(e)}), 500
-
-    # 设置脚本执行权限
-    try:
-        os.chmod(script_path, 0o755)
-        print(f"Set executable permissions for {script_path}")
-    except Exception as e:
-        print(f"Error setting script permissions: {e}")
-        return jsonify({"error": "Failed to set script permissions", "details": str(e)}), 500
-
-    # 执行训练脚本
-    command = [script_path]
-    print(f"Executing command: {' '.join(command)}")
-
-    try:
-        # 执行脚本并捕获输出
+        model = data.get('model', '').strip()
+        dataset = data.get('dataset', '').strip()
+        # 2. 基础校验（只需要model和dataset）
+        if not model or not dataset:
+            return jsonify(success=False, error="必须提供 model 和 dataset 参数"), 400
+        # 3. 硬编码镜像名称（根据你的实际镜像名称）
+        IMAGE_NAME = "bert-ner:conll2003"
+        # 4. 生成唯一容器名
+        timestamp = int(time.time())
+        rand_suffix = random.randint(1000, 9999)
+        container_name = f"{model}-{dataset}-{timestamp}-{rand_suffix}"
+        # 5. 构建Docker命令（仅包含必要参数）
+        docker_cmd = [
+            "docker", "run",
+            "--name", container_name,
+            "--detach",  # 后台运行
+            IMAGE_NAME
+        ]
+        # 6. 执行命令（兼容Python3.6）
         result = subprocess.run(
-            command,
+            docker_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            universal_newlines=True,
-            check=True
+            universal_newlines=True  # 替代text=True
         )
-
-        # 返回脚本执行结果
-        output = result.stdout
-        print(f"Training script executed successfully. Output: {output}")
-        return jsonify({"content": output})
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error executing training script: {e}")
-        print("Command output (stdout):", e.stdout.strip())
-        print("Command error (stderr):", e.stderr.strip())
-        return jsonify({
-            "error": "Failed to execute training script",
-            "details": e.stderr.strip(),
-            "stdout": e.stdout.strip()
-        }), 500
-    except FileNotFoundError:
-        print(f"Error: Script or python3 command not found at {script_path}")
-        return jsonify({"error": "Script or python3 command not found"}), 500
+        # 7. 处理结果
+        if result.returncode == 0:
+            return jsonify(
+                success=True,
+                container_id=result.stdout.strip(),
+                container_name=container_name
+            )
+        else:
+            return jsonify(
+                success=False,
+                error=result.stderr,
+                command=" ".join(docker_cmd)
+            ), 500
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify(
+            success=False,
+            error=f"服务器内部错误: {str(e)}"
+        ), 500
 
 
 # 修改 /predict 路由，借鉴 /load 逻辑
@@ -403,7 +362,7 @@ def evaluat():
 
             # 模拟评估结果
             t = random.randint(1,10) % 7
-            # time.sleep(3) # 生产环境不要阻塞主线程
+            time.sleep(3) # 生产环境不要阻塞主线程
 
             Accuracy = 0.792 + t / 150
             Recall = 0.842 + t / 150 * 3
@@ -522,7 +481,7 @@ def stop_container(container_value):
     try:
         # 使用 docker ps -a 来列出所有容器，包括已停止的
         result = subprocess.run(
-            ['docker', 'ps', '-a', '--filter', 'name=ner', '--format', '{{.Names}}\t{{.Image}}'],
+            ['docker', 'ps', '--filter', 'name=ner', '--format', '{{.Names}}\t{{.Image}}'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -612,19 +571,20 @@ def stop_container(container_value):
 @app.route('/trainlist', methods=['GET'])
 def trainlist_get():
     """
-    获取包含 'ner' 的 Docker 容器列表。
-    返回格式：{'trainlist': [{'value': int, 'name': str, 'dataset': str, 'time': str, 'cpu': str, 'memory': str}, ...]}
-    使用 docker ps 获取容器信息，docker stats 获取 CPU 和内存，docker inspect 获取运行时间。
+    获取包含 'ner' 的 Docker 容器列表，并根据 StartedAt/FinishedAt 计算 Up 时间。
+    返回格式：{'trainlist': [{'value': str, 'name': str, 'dataset': str, 'time': str, 'cpu': str, 'memory': str}, ...]}
+    使用 docker ps 获取容器列表，docker stats 获取 CPU 和内存，docker inspect 获取运行时间。
     """
     print("Received GET request for /trainlist")
-    
-    # 使用局部列表，避免全局变量问题
+
     temp_container_list = []
 
     try:
-        # 1. 获取所有包含 'ner' 的容器
+        # 1. 获取所有包含 'ner' 的容器名称和镜像名
+        # 使用 --filter "status=running" 和 --filter "status=exited" 分开获取可能更清晰，
+        # 但为了简化，我们先获取所有容器，再通过 inspect 判断状态
         result = subprocess.run(
-            ['docker', 'ps', '-a', '--filter', 'name=ner', '--format', '{{.Names}}\t{{.Image}}'],
+            ['docker', 'ps',  '--filter', 'name=ner', '--format', '{{.Names}}\t{{.Image}}'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -636,27 +596,32 @@ def trainlist_get():
 
         if not output_lines or (len(output_lines) == 1 and output_lines[0] == ''):
             print("DEBUG: No 'ner' containers found.")
-            return jsonify({"trainlist": ["Nothing"]})
+            return jsonify({"trainlist": []}) # 返回空列表而不是 ["Nothing"] 更符合 JSON 格式
 
         # 2. 获取所有容器的资源占用信息（docker stats）
-        stats_result = subprocess.run(
-            ['docker', 'stats', '--no-stream', '--format', '{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            check=True
-        )
-        stats_lines = stats_result.stdout.strip().split('\n')
-        # 创建字典以便快速查找容器资源占用
-        stats_dict = {}
-        for line in stats_lines:
-            if line:
-                parts = line.split('\t')
-                if len(parts) >= 3:
-                    container_name = parts[0]
-                    cpu = parts[1].rstrip('%')  # 去掉 % 符号
-                    memory = parts[2].split('/')[0].strip()  # 取 MEM USAGE 部分
-                    stats_dict[container_name] = {'cpu': cpu, 'memory': memory}
+        # 注意：docker stats 只能获取正在运行的容器的信息，对于已停止的容器，CPU和内存会显示 "--" 或 "0"。
+        try:
+            stats_result = subprocess.run(
+                ['docker', 'stats', '--no-stream', '--format', '{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                check=True
+            )
+            stats_lines = stats_result.stdout.strip().split('\n')
+            stats_dict = {}
+            for line in stats_lines:
+                if line:
+                    parts = line.split('\t')
+                    if len(parts) >= 3:
+                        container_name = parts[0]
+                        cpu = parts[1].strip()  # 保留 % 符号
+                        memory = parts[2].split('/')[0].strip()  # 取 MEM USAGE 部分
+                        stats_dict[container_name] = {'cpu': cpu, 'memory': memory}
+        except CalledProcessError:
+             # 如果没有正在运行的容器，docker stats 会报错，这里捕获并忽略
+            print("DEBUG: docker stats command failed (likely no running containers).")
+            stats_dict = {} # 初始化为空字典
 
         # 3. 遍历容器列表
         for line in output_lines:
@@ -666,32 +631,77 @@ def trainlist_get():
             image_parts = image_name.rsplit(':', 1)
             image_tag = image_parts[1] if len(image_parts) > 1 else ""
 
-            # 4. 获取容器运行时间（通过 docker inspect）
-            inspect_result = subprocess.run(
-                ['docker', 'inspect', container_name],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                check=True
-            )
-            inspect_data = json.loads(inspect_result.stdout)
-            created_time = inspect_data[0]['Created']  # 示例: "2023-10-01T12:00:00Z"
-            created_dt = datetime.strptime(created_time[:19], '%Y-%m-%dT%H:%M:%S')
-            time_diff = (datetime.utcnow() - created_dt).total_seconds() / 3600  # 转换为小时
-            time_str = f"{int(time_diff)}"  # 转换为整数小时字符串
+            # 4. 获取容器详细信息（docker inspect）
+            try:
+                inspect_result = subprocess.run(
+                    ['docker', 'inspect', container_name],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    check=True
+                )
+                inspect_data = json.loads(inspect_result.stdout)[0] # inspect 返回一个列表，取第一个元素
+
+                # 提取 StartedAt 和 FinishedAt
+                started_at_str = inspect_data.get('State', {}).get('StartedAt')
+                finished_at_str = inspect_data.get('State', {}).get('FinishedAt') # 已停止的容器才有 FinishedAt
+
+                # print(started_at_str, finished_at_str)
+
+                up_time_str = "0" # 默认 Up 时间为 0
+
+                # 解析时间并判断状态
+                if started_at_str and started_at_str != '0001-01-01T00:00:00Z': # 检查 StartedAt 是否有效
+                     # Docker 的时间格式可能是带纳秒的，只取到秒
+                    started_dt = datetime.strptime(started_at_str.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+                    # 将 StartedAt 视为 UTC 时间，因为 Docker 默认使用 UTC
+
+                    print(started_dt)
+                    started_dt = started_dt.replace(tzinfo=timezone.utc)
+
+                    # 如果 FinishedAt 是 '0001-01-01T00:00:00Z' 或 FinishedAt 的时间早于 StartedAt
+                    # 说明容器正在运行
+                    if  finished_at_str or finished_at_str == '0001-01-01T00:00:00Z':
+                        # 容器正在运行
+                        now_dt = datetime.now(timezone.utc) # 获取当前 UTC 时间
+                        time_difference = now_dt - started_dt
+                        total_seconds = time_difference.total_seconds()
+
+                        # 格式化时间差为人性化的字符串 (天, 小时, 分钟)
+                        days = int(total_seconds // 86400)
+                        hours = int((total_seconds % 86400) // 3600)
+                        minutes = int((total_seconds % 3600) // 60)
+
+                        if days > 0:
+                            up_time_str = f"{days}d {hours}h" # 显示天和小时
+                        elif hours > 0:
+                            up_time_str = f"{hours}h {minutes}m" # 显示小时和分钟
+                        else:
+                            up_time_str = f"{minutes}m" # 显示分钟
+
+                    else:
+                         # 容器已停止，Up 时间为 0
+                        up_time_str = "0"
+
+
+            except (json.JSONDecodeError, KeyError, ValueError, IndexError) as e:
+                print(f"Error parsing inspect data for container {container_name}: {e}")
+                up_time_str = "Error" # 解析失败显示错误
 
             # 5. 从 stats_dict 获取 CPU 和内存信息
-            cpu = stats_dict.get(container_name, {'cpu': '0'})['cpu']
-            memory = stats_dict.get(container_name, {'memory': '0MiB'})['memory']
+            # 对于已停止的容器，stats_dict 中可能没有信息，提供默认值
+            cpu = stats_dict.get(container_name, {}).get('cpu', '--') # 默认显示 --
+            memory = stats_dict.get(container_name, {}).get('memory', '--') # 默认显示 --
+
 
             # 6. 构造容器信息字典
             container_info = {
-                "value": str(value_counter),  # 转换为字符串
+                "value": str(value_counter),
                 "name": container_name,
                 "dataset": image_tag,
-                "time": time_str,  # 运行时间（小时）
-                "cpu": cpu,  # CPU 使用率（字符串，如 "1.23"）
-                "memory": memory  # 内存使用量（字符串，如 "123.4MiB"）
+                "time": up_time_str,  # 根据 StartedAt/FinishedAt 计算的 Up 时间
+                "cpu": cpu,
+                "memory": memory
             }
             temp_container_list.append(container_info)
             value_counter += 1
@@ -708,7 +718,6 @@ def trainlist_get():
     except Exception as e:
         print(f"An unexpected error occurred in trainlist_get: {str(e)}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
-    
 
 # ============================================================
 # 获取容器日志的新路由
